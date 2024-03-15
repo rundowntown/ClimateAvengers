@@ -97,8 +97,7 @@
 
 
 ### Data Stored Elsewhere ###
- Our csv files for California and Florida were too large to store on GitHub, thus we used OneDrive to store them.
- Similarly, we will store the tif files for each state in the same OneDrive directory.
+ Our csv and tif files for California and Florida were too large to store on GitHub, thus we used OneDrive to store them.
   
   OneDrive Directory URL: https://gtvault-my.sharepoint.com/:f:/g/personal/rhopkins40_gatech_edu/Ekrxp3Qm-s5Opuhuu-Q-JiQBiq_C7tN1Mn_MDoxR2razFQ?e=0g6cbN
 
