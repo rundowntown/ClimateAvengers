@@ -47,7 +47,7 @@ crop_legend <- data.table(CropValue = crop_codes$Value, CropTypes = crop_codes$C
 
 
 
-###################################### Start of Conversion #############################################
+###################################### TIF to CSV Conversion ############################################
 
 #For loop to automate reading and converting mutiple tif files
 for (crop_data in crop_datasets) {
