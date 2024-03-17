@@ -13,7 +13,7 @@
 > *Vermont crop selection based on a custom exclusion selection criteria found in `CropGeoDatAnalysis.r`.*
 
 
-***Cali:*** *https://farmingwork.com/blog/from-almonds-to-oranges-exploring-californias-top-10-crops/*
+***California:*** *https://farmingwork.com/blog/from-almonds-to-oranges-exploring-californias-top-10-crops/*
 
 * 3   - Rice
 * 37  - Other Hay/Non Alfalfa
@@ -57,10 +57,10 @@
 
 
 > **Data Discrepancies:**
- - *Florida 2015 (No Tomatoes)*
- - *Florida 2013 (No Peppers)*
- - *Florida 2012 (No Tomatoes)*
- - *Florida 2010 (No Watermelons, Peppers)*
+> - *Florida 2015 (No Tomatoes)*
+> - *Florida 2013 (No Peppers)*
+> - *Florida 2012 (No Tomatoes)*
+> - *Florida 2010 (No Watermelons, Peppers)*
 
 
 ### Data Stored Elsewhere ###
