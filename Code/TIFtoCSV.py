@@ -1,3 +1,15 @@
+################################ Annual Crop Data TIF to CSV Coverter ##################################
+# This script is written to convert state annual crop data for California and Florida tif files to csv.
+
+# Note:
+#  - Crop Data is from https://nassgeodata.gmu.edu/CropScape/
+#    Conversion: .222395 acres per pixel
+
+# In the future:
+#  - File paths are from Ryan's local file management.
+#    Use a python library to save and load files from root directory, instead of using local paths.
+########################################################################################################
+
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, transform_bounds
 from rasterio.enums import Resampling
