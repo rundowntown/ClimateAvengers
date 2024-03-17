@@ -10,7 +10,7 @@
 
 **Crop selections:** Limited to 10 crops on the basis of crop frequency and contribution to local economies.
 
-> *Vermont crop selection based on a custom exclusion selection criteria found in `CropGeoDatAnalysis.r`.*
+> *Vermont crop selection based on a custom exclusion selection criteria found in `cropYearlyCSVAnalysis.r`.*
 
 
 ***California:*** *https://farmingwork.com/blog/from-almonds-to-oranges-exploring-californias-top-10-crops/*
