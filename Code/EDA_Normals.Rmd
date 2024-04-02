@@ -1,0 +1,257 @@
+---
+title: 'EDA: 30 Year Normals'
+author: "DCF"
+date: "2024-03-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(gridExtra)
+library(ggpubr) 
+library(cowplot)
+library(hrbrthemes)
+```
+
+## EDA: 30 Year Normals
+
+
+```{r dataLoad}
+## Load In 30 Year Normals
+
+## California
+caliNormals <- read.csv('../Data/30YearNormals_Data/CaliforniaNormalsReady.csv')
+
+## Florida
+flordiaNormals <- read.csv('../Data/30YearNormals_Data/FloridaNormalsReady.csv')
+
+
+## Crops 
+myCrops <- read.csv('../Data/Crop_Data/CaliforniaCropsCountyReady.csv')
+
+## Convert the DATE column to Date type
+caliNormals$DATE <- as.Date(caliNormals$DATE, format = "%m-%d")
+
+```
+
+
+## 30 Year Normals For all Counties in CA
+```{r dataExplore, echo = FALSE}
+
+colnames(caliNormals)
+
+# Set the dark theme
+theme_set(theme_dark())
+
+# Function to plot temperature progression through the year
+plot_progression <- function(data, y_var, title, line_color) {
+  ggplot(data, aes(x = DATE, y = get(y_var))) +
+    geom_line(color = line_color) +
+    scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+    labs(title = title,
+         x = "Date",
+         y = y_var)
+}
+
+# Average Temperature Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalAvgTemp', 
+  title = 'Average Temperature Progression Through the Year', 
+  line_color = 'lightblue'
+)
+
+# Average Temperature Standard Deviation Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalAvgTempStd', 
+  title = 'Average Temperature Std Dev Progression Through the Year', 
+  line_color = 'lightgreen'
+)
+
+# Maximum Temperature Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMaxTemp', 
+  title = 'Maximum Temperature Progression Through the Year', 
+  line_color = 'lightpink'
+)
+
+# Maximum Temperature Standard Deviation Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMaxTempStd', 
+  title = 'Maximum Temperature Std Dev Progression Through the Year', 
+  line_color = 'lightcoral'
+)
+
+# Minimum Temperature Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMinTemp', 
+  title = 'Minimum Temperature Progression Through the Year', 
+  line_color = 'lightblue'
+)
+
+# Minimum Temperature Standard Deviation Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMinTempStd', 
+  title = 'Minimum Temperature Std Dev Progression Through the Year', 
+  line_color = 'lavender'
+)
+
+# Month-to-Date Precipitation Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMtdPrcp', 
+  title = 'Month-to-Date Precipitation Progression Through the Year', 
+  line_color = 'aquamarine'
+)
+
+# Month-to-Date Snowfall Progression Through the Year
+plot_progression(
+  data = caliNormals, 
+  y_var = 'normalMtdSnow', 
+  title = 'Month-to-Date Snowfall Progression Through the Year', 
+  line_color = 'lightgrey'
+)
+```   
+
+
+```{r byCounty, echo = FALSE, eval = FALSE}
+## Set the dark theme
+theme_set(theme_dark())
+
+# Function modification to include line_color parameter
+plot_sequence_grouped <- function(data, variable, title, line_color) {
+  data %>%
+    group_by(DATE) %>%
+    summarise(Mean = mean(get(variable), na.rm = TRUE),
+              SEM = sd(get(variable), na.rm = TRUE) / sqrt(n())) %>%
+    ggplot(aes(x = DATE, y = Mean)) +
+    geom_line(color = 'black', size = 1) +
+    geom_ribbon(aes(ymin = Mean - 1.96 * SEM, ymax = Mean + 1.96 * SEM), fill = line_color, alpha = 0.3) +
+    scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+    labs(title = title, x = "Date", y = paste("Mean", variable)) +
+    theme(legend.position = "none")
+}
+
+# Plotting sequences with colors
+
+# Average Temperature
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalAvgTemp", 
+  title = "Average Temperature Progression",
+  line_color = 'lightblue'
+)
+
+# Average Temperature Standard Deviation
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalAvgTempStd", 
+  title = "Average Temperature Std Dev Progression",
+  line_color = 'lightgreen'
+)
+
+# Maximum Temperature
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMaxTemp", 
+  title = "Maximum Temperature Progression",
+  line_color = 'lightpink'
+)
+
+# Maximum Temperature Standard Deviation
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMaxTempStd", 
+  title = "Maximum Temperature Std Dev Progression",
+  line_color = 'lightcoral'
+)
+
+# Minimum Temperature
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMinTemp", 
+  title = "Minimum Temperature Progression",
+  line_color = 'lightblue'
+)
+
+# Minimum Temperature Standard Deviation
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMinTempStd", 
+  title = "Minimum Temperature Std Dev Progression",
+  line_color = 'lavender'
+)
+
+# Month-to-Date Precipitation
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMtdPrcp", 
+  title = "Month-to-Date Precipitation Progression",
+  line_color = 'aquamarine'
+)
+
+# Month-to-Date Snowfall
+plot_sequence_grouped(
+  data = caliNormals, 
+  variable = "normalMtdSnow", 
+  title = "Month-to-Date Snowfall Progression",
+  line_color = 'lightgrey'
+)
+
+```     
+```{r pdf AVG, echo = FALSE, eval = FALSE}
+### California Averages PDF Plot
+
+## Modified function to return the plot instead of printing it
+plot_sequence_grouped <- function(data, variable, title, line_color) {
+  p <- data %>%
+    group_by(DATE) %>%
+    summarise(Mean = mean(get(variable), na.rm = TRUE),
+              SD = sd(get(variable), na.rm = TRUE),
+              SEM = SD / sqrt(n())) %>%
+    ggplot(aes(x = DATE, y = Mean)) +
+    geom_line(color = line_color, linewidth = 1) +
+    geom_ribbon(aes(ymin = Mean - 1.96 * SEM, ymax = Mean + 1.96 * SEM), fill = line_color, alpha = 0.4) +
+    scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+    labs(title = title, x = "Date", y = paste("Mean", variable)) +
+    theme(legend.position = "none")+
+    theme_dark()
+  return(p)
+}
+
+## Generate Plots
+p1 <- plot_sequence_grouped(caliNormals, "normalAvgTemp", "Average Temperature Progression", 'lightblue')
+p2 <- plot_sequence_grouped(caliNormals, "normalAvgTempStd", "Average Temperature Std Dev Progression", 'lightgreen')
+p3 <- plot_sequence_grouped(caliNormals, "normalMaxTemp", "Maximum Temperature Progression", 'lightpink')
+p4 <- plot_sequence_grouped(caliNormals, "normalMaxTempStd", "Maximum Temperature Std Dev Progression", 'lightcoral')
+p5 <- plot_sequence_grouped(caliNormals, "normalMinTemp", "Minimum Temperature Progression", 'lightblue')
+p6 <- plot_sequence_grouped(caliNormals, "normalMinTempStd", "Minimum Temperature Std Dev Progression", 'lavender')
+p7 <- plot_sequence_grouped(caliNormals, "normalMtdPrcp", "Month-to-Date Precipitation Progression", 'aquamarine')
+p8 <- plot_sequence_grouped(caliNormals, "normalMtdSnow", "Month-to-Date Snowfall Progression", 'lightgrey')
+
+
+
+## GGArrange Plots 
+grid <- grid.arrange(
+  p1, p2, p3, 
+  p4, p5, p6, 
+  p7, p8, 
+  ncol = 3)
+
+## Add Title
+myGraphSet <- annotate_figure(grid, top = text_grob("30 Year Normals For All of California"))
+
+# Save the grid to a PDF file
+ggsave("caliNormalAvgs.pdf", myGraphSet, width = 16, height = 12)
+
+```  
+
+
