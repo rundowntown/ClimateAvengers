@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-This Script Combines the California Daily Temp Files
-NOAA Global Summaries of the Day
+This Script Combines GSOD NOAA data, which comes shipped in multiple
+files, into a single .CSV for each State selected.
+
+User must set the State and Year Ranges of the files at the top of the script.
+
 Source: https://www.ncei.noaa.gov/access/metadata/landing-page/bin/iso?id=gov.noaa.ncdc:C00516
 @author: dforc
 """
@@ -12,7 +15,7 @@ import os
 #######################################
 ####### !! >> Set State Here << !!
 #######################################
-states = ['Florida']
+states = ['Florida', 'California']
 
 #######################################
 ####### !! >> Define Year Ranges of Files << !!
