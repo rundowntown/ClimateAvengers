@@ -25,7 +25,7 @@ import numpy as np
 #######################################
 ####### !! >> Set State Here << !!
 #######################################
-myState = "California"
+myState = "Florida"
 
 ## Set Dynamic Path
 cleanDataPath = f'./Clean_Daily_Data/{myState}DailyReady.csv'

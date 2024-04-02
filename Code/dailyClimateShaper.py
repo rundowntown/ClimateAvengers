@@ -2,6 +2,9 @@
 """
 ////////// Daily Climate Data Processing \\\\\\\\\
 
+This script is run after dailyRawCombiner.py, and before
+dailyClimateBasicCleaner.py
+    
 This Script Processes Daily Climate Data
 (./Raw_Daily_Data/{state}DailyRaw.csv)
 It completes the following tasks:
@@ -26,7 +29,7 @@ import numpy as np
 #######################################
 ####### !! >> Set State Here << !!
 #######################################
-myState = "California"
+myState = "Florida"
 
 
 
@@ -135,7 +138,6 @@ dailyData_with_county.drop(columns=['Lat_y', 'Long_y'], inplace=True)
 dailyData_with_county.rename(columns={'Lat_x': 'Lat', 'Long_x': 'Long'}, inplace=True)
 
 ## Write the Processed Daily Data to .CSV
-dailyData_with_county.to_csv
-
-
+dailyData_with_county.to_csv(dailyOutputPath, index=False)
+stations_with_county.to_csv(stationsOutputPath, index=False)
 
