@@ -1,8 +1,24 @@
+################################## Vermont Annual Crop CSV Analysis ####################################
+# This script is written for the purpose of analysing the Vermont annual crop datasets after running the
+#  TIF to CSV scripts. This script filters out unwanted crop types, creates crop frequency tables for each
+#  year, filters that datasets to the top 10 crops by acreage, and plots a density map to ensure lon/lat 
+#  validity.
+
+# Note:
+#  Script only used for Vermont. TIF data for Florida and California were pre-filtered to only include the
+#   top 10 crops for each state.
+########################################################################################################
+
+# Insatll packages
 install.packages(c("dplyr", "data.table", "ggplot2"))
 library(dplyr)
 library(data.table)
 library(ggplot2)
 
+
+
+
+###### Clean Data ######
 # Read all crop data files
 dt2020 <- as.data.table(read.csv("D:/Documents/GT/MGT 6203/Project/DataSets/VermontCropData/VT_CropGeoData_2020.csv"))
 dt2019 <- as.data.table(read.csv("D:/Documents/GT/MGT 6203/Project/DataSets/VermontCropData/VT_CropGeoData_2019.csv"))
@@ -17,9 +33,6 @@ dt2011 <- as.data.table(read.csv("D:/Documents/GT/MGT 6203/Project/DataSets/Verm
 dt2010 <- as.data.table(read.csv("D:/Documents/GT/MGT 6203/Project/DataSets/VermontCropData/VT_CropGeoData_2010.csv"))
 
 
-
-
-###### Clean Data ######
 # List of crop types to exclude
 exclude_crops <- c("Deciduous Forest", "Other Hay/Non Alfalfa", "Grass/Pasture", "Alfalfa", "Sorghum",
                    "Christmas Trees", "Sod/Grass Seed", "Fallow/Idle Cropland", "Clover/Wildflowers",
@@ -42,6 +55,8 @@ dt2010 <- dt2010[!(CropTypes %in% exclude_crops)]
 
 # Combine all data.tables into one
 combined_dt <- rbindlist(list(dt2020, dt2019, dt2018, dt2017, dt2016, dt2015, dt2014, dt2013, dt2012, dt2011, dt2010))
+
+
 
 
 ###### Frequency of each crop type ######
@@ -119,30 +134,8 @@ Crop_Freq_2010[, Acres := Count * .222395]
 
 
 
-###### Crop Area Over Time #######
-# Aggregate or ensure you have the data in the format you need for plotting
-agg_data <- combined_dt[, .(Count = .N), by = .(Year, CropTypes)]
 
-# Data for corn and soybeans only
-corn_soybeans_data <- agg_data[CropTypes %in% c("Corn", "Soybeans")]
-
-# For plots
-custom_dark_theme <- theme(
-  plot.background = element_rect(fill = "#121212", color = NA), # muted black background
-  panel.background = element_rect(fill = "#121212"), # muted black for the panel
-  text = element_text(color = "white"), # white text for readability
-  axis.title = element_text(color = "white"), # white axis titles
-  axis.text = element_text(color = "white"), # white axis text
-  legend.background = element_rect(fill = "#121212"), # muted black for legend background
-  legend.text = element_text(color = "white"), # white text for legend
-  legend.title = element_text(color = "white"), # white legend titles
-  axis.line = element_line(color = "white"), # white axis lines
-  panel.grid.major = element_line(color = "grey30"), # darker grid lines
-  panel.grid.minor = element_line(color = "grey20"), # even darker minor grid lines
-  legend.position = "bottom",
-  legend.key = element_blank() # remove the background boxes in legend
-)
-
+###### Format Filtered Datasets to Top 10 Crops by Acreage #######
 # Calculate the total area for each crop type
 total_area_by_crop <- Crop_Freq_2013[ , .(TotalArea = sum(Count)), by = .(CropTypes)]
 
@@ -152,17 +145,20 @@ top_crops <- total_area_by_crop[order(-TotalArea)][1:10, CropTypes]
 # Filter the original data to include only the top 10 crops
 dt2020_top_crops_lonlat <- dt2013[CropTypes %in% top_crops]
 
+# Calculate frequency of each crop
 dt2020_top_crops_freq <- dt2020_top_crops_lonlat %>%
   group_by(CropTypes) %>%
   summarise(Count = n()) %>%
   arrange(desc(Count))
 
+# Write newly formatted crop data
 fwrite(dt2020_top_crops_lonlat, "D:/Documents/GT/MGT 6203/Project/DataSets/VermontCropData/VT_top_crops_lonlat_2013.csv", row.names = FALSE )
 fwrite(dt2020_top_crops_freq, "D:/Documents/GT/MGT 6203/Project/DataSets/VermontCropData/VT_top_crops_freq_2013.csv", row.names = FALSE )
 
 
-###### Spatial Analysis ######
 
+
+###### Spatial Analysis ######
 # Define custom colors for each crop type
 crop_colors <- c(
   "Apples" = "red3",
@@ -190,7 +186,24 @@ crop_colors <- c(
   "Winter Wheat" = "wheat3"
 )
 
-# All Crops
+# Create dark theme for better plot visualization
+custom_dark_theme <- theme(
+  plot.background = element_rect(fill = "#121212", color = NA), # muted black background
+  panel.background = element_rect(fill = "#121212"), # muted black for the panel
+  text = element_text(color = "white"), # white text for readability
+  axis.title = element_text(color = "white"), # white axis titles
+  axis.text = element_text(color = "white"), # white axis text
+  legend.background = element_rect(fill = "#121212"), # muted black for legend background
+  legend.text = element_text(color = "white"), # white text for legend
+  legend.title = element_text(color = "white"), # white legend titles
+  axis.line = element_line(color = "white"), # white axis lines
+  panel.grid.major = element_line(color = "grey30"), # darker grid lines
+  panel.grid.minor = element_line(color = "grey20"), # even darker minor grid lines
+  legend.position = "bottom",
+  legend.key = element_blank() # remove the background boxes in legend
+)
+
+# Lon/Lat density mapping of All Crops for a given year if data
 data_year <- dt2013
 All_Crops_Spatial <- ggplot(data_year, aes(x = Longitude, y = Latitude, color = CropTypes)) +
   geom_point(alpha = 0.5, size = .6) +
@@ -201,6 +214,3 @@ All_Crops_Spatial <- ggplot(data_year, aes(x = Longitude, y = Latitude, color = 
   custom_dark_theme +
   theme(legend.position = "right")
 print(All_Crops_Spatial)
-
-
-#Wrong Long,Lat: 2013, 2012, 2011
