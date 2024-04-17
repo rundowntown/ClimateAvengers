@@ -29,7 +29,7 @@ import numpy as np
 #######################################
 ####### !! >> Set State Here << !!
 #######################################
-myState = "Florida"
+myState = "California"
 
 
 
@@ -50,6 +50,7 @@ rename_dict = {
     'LATITUDE': 'Lat',
     'LONGITUDE': 'Long',
     'ELEVATION': 'Elevation',
+    'NAME': 'StationName',
     'DATE': 'Date',
     'DEWP': 'DewPoint',
     'FRSHTT': 'WeatherType',
@@ -71,7 +72,8 @@ columns_of_interest = ['Date', 'DewPoint', 'WeatherType',
                        'WindGust', 'MaxTemp', 'MinTemp',
                        'MaxWindSpeed', 'Precipitation', 
                        'AvgTemp', 'WindSpeed',
-                       'Elevation', 'STATION', 
+                       'Elevation', 'STATION',
+                       'StationName',
                        'Long', 'Lat']
 
 

@@ -1,0 +1,67 @@
+---
+title: "combinedviewer"
+author: "DCF"
+date: "2024-04-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r dataLoad}
+
+## Read in Data
+
+myCombinedData <- read.csv('Combined_Daily_Normals.csv')
+
+# Print the structure of the dataframe
+str(myCombinedData)
+
+# Print the first few rows of the dataframe
+head(myCombinedData)
+
+myCombinedData %>% 
+  select('STATION') %>% 
+  n_distinct()
+
+
+myCombinedData %>% 
+  select('DailyStation') %>% 
+  n_distinct() 
+
+colSums(is.na(myCombinedData))
+```
+
+
+```{r checks}
+
+duplicates <- myCombinedData %>%
+  group_by(STATION, Date) %>%
+  summarise(Count = n(), .groups = 'drop') %>%
+  filter(Count > 1)
+
+# Now find unique stations that have duplications
+unique_duplicates <- duplicates %>%
+  distinct(STATION) %>%
+  arrange(STATION)
+
+# Print the unique stations that have duplications
+print(unique_duplicates)
+
+
+
+# Filter for the specified stations
+specified_stations <- c(72289523243, 72290023188, 74003503145, 74614023112, 74917100479, 99404199999)
+
+filtered_data <- myCombinedData %>%
+  filter(STATION %in% specified_stations, Date == "2014-02-01")
+
+# Print the filtered data for examination
+print(filtered_data)
+```
+
+
