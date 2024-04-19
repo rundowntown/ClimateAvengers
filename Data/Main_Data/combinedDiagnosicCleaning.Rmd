@@ -133,10 +133,14 @@ for (i in seq(1, length(stations), by = stations_per_plot)) {
 
 
 
+## Read in Data
+myCombinedData <- read.csv('Imputed_Combined_Daily_Normals.csv')
 
 
 
-
+## Summarize missing data for specific columns
+missing_summary <- sapply(myCombinedData[c("MaxTemp", "MinTemp", "MaxWindSpeed", "AvgTemp", "WindSpeed", "Precipitation")], function(x) sum(is.na(x)))
+print(missing_summary)
 
 
 
