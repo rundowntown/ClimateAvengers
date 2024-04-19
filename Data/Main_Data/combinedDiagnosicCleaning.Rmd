@@ -8,6 +8,8 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggplot2)
+library(reshape2)
 ```
 
 
@@ -15,13 +17,12 @@ library(tidyverse)
 ```{r dataLoad}
 
 ## Read in Data
-
 myCombinedData <- read.csv('Combined_Daily_Normals.csv')
 
-# Print the structure of the dataframe
+## Print the structure of the dataframe
 str(myCombinedData)
 
-# Print the first few rows of the dataframe
+## Print the first few rows of the dataframe
 head(myCombinedData)
 
 myCombinedData %>% 
@@ -34,34 +35,116 @@ myCombinedData %>%
   n_distinct() 
 
 colSums(is.na(myCombinedData))
+
+colnames(myCombinedData)
 ```
 
 
 ```{r checks}
 
-duplicates <- myCombinedData %>%
-  group_by(STATION, Date) %>%
-  summarise(Count = n(), .groups = 'drop') %>%
-  filter(Count > 1)
+## Missing Values Handling
 
-# Now find unique stations that have duplications
-unique_duplicates <- duplicates %>%
-  distinct(STATION) %>%
-  arrange(STATION)
-
-# Print the unique stations that have duplications
-print(unique_duplicates)
+## Summarize missing data for specific columns
+missing_summary <- sapply(myCombinedData[c("WindGust", "MaxTemp", "MinTemp", "MaxWindSpeed", "AvgTemp", "WindSpeed", "Precipitation")], function(x) sum(is.na(x)))
+print(missing_summary)
 
 
 
-# Filter for the specified stations
-specified_stations <- c(72289523243, 72290023188, 74003503145, 74614023112, 74917100479, 99404199999)
+identify_outliers <- function(data) {
+  Q1 <- quantile(data, 0.25, na.rm = TRUE)
+  Q3 <- quantile(data, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  return(data < lower_bound | data > upper_bound)
+}
 
-filtered_data <- myCombinedData %>%
-  filter(STATION %in% specified_stations, Date == "2014-02-01")
+## Apply the outlier identification function to the columns
+outliers <- sapply(myCombinedData[c("WindGust", "MaxTemp", "MinTemp", "MaxWindSpeed", "AvgTemp", "WindSpeed")], identify_outliers)
+summary(outliers)
 
-# Print the filtered data for examination
-print(filtered_data)
+
+
+## Prepare the data for plotting by reshaping it to a long format
+longData <- melt(myCombinedData, measure.vars = c("WindGust", "MaxTemp", "MinTemp", "MaxWindSpeed", "AvgTemp", "WindSpeed"))
+
+## Create box plots
+ggplot(longData, aes(x = variable, y = value)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Outlier Check: Box Plot of Weather Variables", x = "Variable", y = "Value")  
+
+
+
+## Create box plots with a professional theme
+ggplot(longData, aes(x = variable, y = value)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+  theme_minimal() +  # Using a minimal theme for a clean and professional look
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Improve label readability
+    axis.title = element_text(size = 12, face = "bold"),  # Bold axis titles
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),  # Center and bold title
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    panel.grid.major.x = element_blank(),  # Remove vertical grid lines
+    panel.border = element_blank(),  # Remove border around the plot
+    axis.line = element_line(colour = "black")  # Add axis lines
+  ) +
+  labs(title = "Box Plot of Weather Variables", x = "Variable", y = "Value")
+
+## Function to generate plots for a subset of stations
+plot_stations <- function(data_subset, file_index) {
+  longData <- melt(data_subset, id.vars = "STATION", measure.vars = c("WindGust", "MaxTemp", "MinTemp", "MaxWindSpeed", "AvgTemp", "WindSpeed"))
+  
+  p <- ggplot(longData, aes(x = variable, y = value)) +
+    geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+    facet_wrap(~ STATION, scales = "free_y", nrow = 2, ncol = 5) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          axis.title = element_text(size = 12, face = "bold"),
+          plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.border = element_blank(),
+          axis.line = element_line(colour = "black"),
+          strip.text.x = element_text(size = 10, face = "bold")) +
+    labs(title = sprintf("Box Plot of Weather Variables by Station (Set %d)", file_index), x = "Variable", y = "Value")
+  
+  # Print
+  print(p)
+  ggsave(sprintf("Station_Boxplot_Set_%d.png", file_index), plot = p, width = 20, height = 10)
+}
+
+## Unique list of stations
+stations <- unique(myCombinedData$STATION)
+
+## Number of stations per plot
+stations_per_plot <- 10
+
+## Loop through stations in batches
+for (i in seq(1, length(stations), by = stations_per_plot)) {
+  subset_stations <- stations[i:min(i+stations_per_plot-1, length(stations))]
+  data_subset <- myCombinedData[myCombinedData$STATION %in% subset_stations,]
+  plot_stations(data_subset, (i-1)/stations_per_plot + 1)
+}
 ```
+
+
+```{r impute}
+
+
+
+
+
+
+
+
+
+
+```  
+
+
+
+
+
 
 
