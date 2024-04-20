@@ -1,0 +1,297 @@
+---
+title: "Index_Analysis"
+author: "DCF"
+date: "2024-04-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(forecast)
+library(lubridate)
+library(pbapply)
+library(gganimate)
+library(viridis)
+library(ggmap)
+library(leaflet)
+library(shiny)
+```
+
+## Weather Risk Index
+
+This is a rough draft of the risk index for crops by weather station.  Index values need to be adjusted still.
+
+
+
+```{r dataLoad}
+getwd()
+
+## Weather Data
+weatherData <- read_csv('../Data/Main_Data/Imputed_Combined_Daily_Normals.csv')
+
+## Crop Count Data
+cropCountData <- read_csv('../Data/Crop_Data/CaliforniaCropsStationReady.csv')
+
+## Crop Cardinal Data
+cropCardinalData <- read_csv('../Data/Crop_Data/CaliforniaCardinalData.csv')
+
+## Colnames Check
+colnames(weatherData)
+colnames(cropCountData)
+colnames(cropCardinalData)
+
+## Convert temperatures from Celsius to Fahrenheit in cropCardinalData
+cropCardinalData <- cropCardinalData %>%
+  mutate(
+    OptimalTempMin_F = OptimalTempMin_C * 9/5 + 32,
+    OptimalTempMax_F = OptimalTempMax_C * 9/5 + 32,
+    AbsTempMin_F = AbsTempMin_C * 9/5 + 32,
+    AbsTempMax_F = AbsTempMax_C * 9/5 + 32
+  )
+
+## Join Crop Cardinal Data with Crop Count Data
+cropInfo <- cropCardinalData %>%
+  inner_join(cropCountData, by = "CropTypes") %>%
+  select(-c(OptimalTempMin_C, OptimalTempMax_C, AbsTempMin_C, AbsTempMax_C)) # Remove Celsius columns
+
+
+```   
+
+
+
+```{r indexCreation}
+
+
+## Add month and year columns to the weather data for easier grouping
+weatherData <- weatherData %>%
+  mutate(
+    Month = month(Date),
+    Year = year(Date)
+  )
+
+## Define the risk assessment function
+calculateRisk <- function(avgTemp, minTemp, maxTemp, optMin, optMax, absMin, absMax, heatVulnerability, frostVulnerability) {
+  riskLevels <- c(
+    avg = ifelse(avgTemp < optMin || avgTemp > optMax, 1, 0),
+    min = ifelse(minTemp < absMin, ifelse(frostVulnerability == "Critical", 3, 2), 0),
+    max = ifelse(maxTemp > absMax, ifelse(heatVulnerability == "Critical", 3, 2), 0)
+  )
+  
+  ## Calculate cumulative risk score for the day
+  totalRisk <- sum(riskLevels)
+  
+  ## Determine risk category based on the score
+  if (totalRisk >= 5) {
+    return("Critical Above")
+  } else if (totalRisk >= 4 && riskLevels['max'] >= 2) {
+    return("Critical Above")
+  } else if (totalRisk >= 4 && riskLevels['min'] >= 2) {
+    return("Critical Below")
+  } else if (totalRisk >= 2) {
+    return("Severe")
+  } else if (totalRisk > 0) {
+    return("Moderate")
+  } else {
+    return("None")
+  }
+}
+
+
+
+
+## Process each crop type, station, and apply daily calculations
+results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
+  cropData <- cropInfo[cropInfo$CropTypes == crop,]
+  
+  stationResults <- lapply(unique(cropData$DailyStation), function(station) {
+    stationWeather <- weatherData[weatherData$DailyStation == station,]
+    
+    ## Filter crop data to match each station's date range exactly
+    specificCropData <- cropData[cropData$DailyStation == station, ]
+
+    ## Perform daily risk assessments
+    dailyRisks <- data.frame(
+      Station = rep(station, nrow(stationWeather)),
+      Crop = rep(crop, nrow(stationWeather)),
+      Month = stationWeather$Month,
+      Year = stationWeather$Year,
+      Risk = mapply(calculateRisk, 
+                    avgTemp = stationWeather$AvgTemp, 
+                    minTemp = stationWeather$MinTemp, 
+                    maxTemp = stationWeather$MaxTemp, 
+                    optMin = specificCropData$OptimalTempMin_F[1], 
+                    optMax = specificCropData$OptimalTempMax_F[1], 
+                    absMin = specificCropData$AbsTempMin_F[1], 
+                    absMax = specificCropData$AbsTempMax_F[1],
+                    heatVulnerability = specificCropData$HeatVulnerability[1], 
+                    frostVulnerability = specificCropData$FrostVulnerability[1]),
+      DaysOptimal = as.integer(stationWeather$AvgTemp >= specificCropData$OptimalTempMin_F[1] & stationWeather$AvgTemp <= specificCropData$OptimalTempMax_F[1]),
+      DaysAbsolute = as.integer(stationWeather$MinTemp >= specificCropData$AbsTempMin_F[1] & stationWeather$MaxTemp <= specificCropData$AbsTempMax_F[1])
+    )
+
+    ## Group by month and year, then summarize
+    monthlySummary <- dailyRisks %>%
+      group_by(Station, Crop, Month, Year) %>%
+      summarise(
+        DaysOptimal = sum(DaysOptimal),
+        DaysAbsolute = sum(DaysAbsolute),
+        CriticalAbove = sum(Risk == "Critical Above"),
+        CriticalBelow = sum(Risk == "Critical Below"),
+        Severe = sum(Risk == "Severe"),
+        Moderate = sum(Risk == "Moderate"),
+        TotalDays = n(),
+        .groups = 'drop'
+      )
+    
+    return(monthlySummary)
+  })
+  
+  ## Combine station results for this crop
+  do.call(rbind, stationResults)
+})
+
+
+
+
+## Combine all results
+finalResults <- do.call(rbind, results)
+
+## Print final results to review
+print(finalResults)
+
+
+
+
+## Rename 'Station' to 'DailyStation' for consistency
+finalResults <- finalResults %>%
+  rename(DailyStation = Station)
+
+
+
+## Oranges Check
+myOranges <- finalResults %>% 
+  filter(Crop == "Oranges")
+  
+
+```   
+
+
+
+```{r viz}
+
+##### Visualizations #####
+
+### ROUGH NETRISKSCORE ###
+
+## Calculate a Net Risk Score
+finalResults <- finalResults %>%
+  mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+
+### These weights will need to be adjusted
+
+## Get Lat/Long from DailyStation Mapping from weatherData
+stationMetadata <- weatherData %>%
+  select(DailyStation, DailyLat, DailyLong) %>%
+  distinct()
+
+### ::TODO:: Add County Name for Info on SHINY App
+
+
+
+## Merge Lat/Long to Index
+finalResults <- finalResults %>%
+  left_join(stationMetadata, by = "DailyStation")
+
+
+finalResults <- finalResults %>%
+  mutate(
+    Year = as.numeric(Year),
+    Month = as.numeric(Month),
+    Date = paste(Year, Month, "1", sep = "-"),  ## Create a 'Date' column for animation
+    Date = as.Date(Date, format = "%Y-%m-%d")   ## Convert to Date object
+  )
+
+
+## Leaflet Test Plot
+leaflet(data = finalResults) %>% 
+  addTiles() %>%  ## Add default OpenStreetMap map tiles
+  addCircles(lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+             radius = ~NetRiskScore * 1000,  # Adjust radius based on your data scale
+             color = ~colorNumeric("viridis", NetRiskScore)(NetRiskScore)) %>%
+  addLegend("bottomright", pal = colorNumeric("viridis", finalResults$NetRiskScore), 
+            values = ~NetRiskScore, title = "Net Risk Score")
+
+
+
+## Write Index Dataframe to CSV
+write.csv(finalResults, 'indexRoughDraft.csv', row.names = FALSE)
+```  
+
+
+```{r shiny}
+
+
+#### R Shiny Risk Index Dashboard ####
+
+### ::TODO:: Add County Name for Info on SHINY App
+### ::TODO:: Add Info on Click for County and Station Name
+### ::TODO:: Have continuous scale (Daily)
+
+## Define UI for the application
+ui <- fluidPage(
+  titlePanel("Dynamic Risk Mapping by Crop Type and Date"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("selectedCrop", "Choose a Crop:", choices = unique(finalResults$Crop)),
+      sliderInput("selectedYear", "Year:", min = min(finalResults$Year), max = max(finalResults$Year), value = min(finalResults$Year)),
+      sliderInput("selectedMonth", "Month:", min = 1, max = 12, value = 1)
+    ),
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
+)
+
+server <- function(input, output) {
+  output$map <- renderLeaflet({
+    ## Filter data based on selected crop and date
+    filteredData <- finalResults %>%
+      filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
+
+    ## Define color palette for NetRiskScore
+    colorPalette <- colorNumeric(palette = c("red", "green"), domain = filteredData$NetRiskScore)
+
+    ## Create the map
+    leaflet(data = filteredData) %>%
+      addTiles() %>%
+      addCircles(
+        lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+        radius = ~ifelse(NetRiskScore < 0, -NetRiskScore * 1500, NetRiskScore * 1000),
+        color = ~colorPalette(NetRiskScore),
+        opacity = 1, fillOpacity = 0.8,
+        popup = ~paste(Crop, "Risk Score:", NetRiskScore)
+      ) %>%
+      addLegend("bottomright", pal = colorPalette, values = ~NetRiskScore,
+                title = "Net Risk Score",
+                opacity = 1)
+  })
+}
+
+## Run the application
+shinyApp(ui = ui, server = server)
+
+
+
+
+```  
+
+
+
+
+
+
+
+
+
