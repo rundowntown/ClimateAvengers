@@ -56,13 +56,16 @@ cropInfo <- cropCardinalData %>%
   inner_join(cropCountData, by = "CropTypes") %>%
   select(-c(OptimalTempMin_C, OptimalTempMax_C, AbsTempMin_C, AbsTempMax_C)) # Remove Celsius columns
 
-
+ 
 ```   
 
 
+## Daily Risk Index
+```{r dailyRiskIndex}
 
-```{r indexCreation}
-
+############################
+### Daily Risk Index
+############################
 
 ## Add month and year columns to the weather data for easier grouping
 weatherData <- weatherData %>%
@@ -71,7 +74,9 @@ weatherData <- weatherData %>%
     Year = year(Date)
   )
 
-## Define the risk assessment function
+############################
+### Risk Assessment Function
+############################
 calculateRisk <- function(avgTemp, minTemp, maxTemp, optMin, optMax, absMin, absMax, heatVulnerability, frostVulnerability) {
   riskLevels <- c(
     avg = ifelse(avgTemp < optMin || avgTemp > optMax, 1, 0),
@@ -82,7 +87,9 @@ calculateRisk <- function(avgTemp, minTemp, maxTemp, optMin, optMax, absMin, abs
   ## Calculate cumulative risk score for the day
   totalRisk <- sum(riskLevels)
   
-  ## Determine risk category based on the score
+  ############################
+  ### Risk Category Score
+  ############################
   if (totalRisk >= 5) {
     return("Critical Above")
   } else if (totalRisk >= 4 && riskLevels['max'] >= 2) {
@@ -99,8 +106,6 @@ calculateRisk <- function(avgTemp, minTemp, maxTemp, optMin, optMax, absMin, abs
 }
 
 
-
-
 ## Process each crop type, station, and apply daily calculations
 results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
   cropData <- cropInfo[cropInfo$CropTypes == crop,]
@@ -111,7 +116,9 @@ results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
     ## Filter crop data to match each station's date range exactly
     specificCropData <- cropData[cropData$DailyStation == station, ]
 
-    ## Perform daily risk assessments
+    ############################
+    ### Perform Risk Assessments
+    ############################
     dailyRisks <- data.frame(
       Station = rep(station, nrow(stationWeather)),
       Crop = rep(crop, nrow(stationWeather)),
@@ -131,7 +138,187 @@ results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
       DaysAbsolute = as.integer(stationWeather$MinTemp >= specificCropData$AbsTempMin_F[1] & stationWeather$MaxTemp <= specificCropData$AbsTempMax_F[1])
     )
 
-    ## Group by month and year, then summarize
+    ############################
+    ### Risk Column Names : Group by month and year, then summarize
+    ############################
+    monthlySummary <- dailyRisks %>%
+      group_by(Station, Crop, Month, Year) %>%
+      summarise(
+        DaysOptimal = sum(DaysOptimal),
+        DaysAbsolute = sum(DaysAbsolute),
+        CriticalAbove = sum(Risk == "Critical Above"),
+        CriticalBelow = sum(Risk == "Critical Below"),
+        Severe = sum(Risk == "Severe"),
+        Moderate = sum(Risk == "Moderate"),
+        TotalDays = n(),
+        .groups = 'drop'
+      )
+    
+    return(monthlySummary)
+  })
+  
+  ## Combine station results for this crop
+  do.call(rbind, stationResults)
+})
+
+
+## Combine all results
+dailyResults <- do.call(rbind, results)
+
+
+
+## Print final results to review
+print(dailyResults)
+
+
+
+
+## Rename 'Station' to 'DailyStation' for consistency
+dailyResults <- dailyResults %>%
+  rename(DailyStation = Station)
+
+
+
+
+
+## Oranges Check
+myOranges <- dailyResults %>% 
+  filter(Crop == "Oranges")
+  
+
+```   
+
+
+
+```{r viz}
+
+##### Visualizations #####
+
+### ROUGH netRiskScore ###
+
+## Ideas: 
+## - Have Hot/Cold separation with color 
+## - 
+##
+
+## Calculate a Net Risk Score
+dailyResults <- dailyResults %>%
+  mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+
+### These weights will need to be adjusted
+
+## Get Lat/Long from DailyStation Mapping from weatherData
+stationMetadata <- weatherData %>%
+  select(DailyStation, DailyLat, DailyLong) %>%
+  distinct()
+
+### ::TODO:: Add County Name for Info on SHINY App
+
+
+
+## Merge Lat/Long to Index
+dailyResults <- dailyResults %>%
+  left_join(stationMetadata, by = "DailyStation")
+
+
+dailyResults <- dailyResults %>%
+  mutate(
+    Year = as.numeric(Year),
+    Month = as.numeric(Month),
+    Date = paste(Year, Month, "1", sep = "-"),  ## Create a 'Date' column for animation
+    Date = as.Date(Date, format = "%Y-%m-%d")   ## Convert to Date object
+  )
+
+
+# ## Leaflet Test Plot
+# leaflet(data = dailyResults) %>% 
+#   addTiles() %>%  ## Add default OpenStreetMap map tiles
+#   addCircles(lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+#              radius = ~NetRiskScore * 1000,  # Adjust radius based on your data scale
+#              color = ~colorNumeric("viridis", NetRiskScore)(NetRiskScore)) %>%
+#   addLegend("bottomright", pal = colorNumeric("viridis", dailyResults$NetRiskScore), 
+#             values = ~NetRiskScore, title = "Net Risk Score")
+
+
+```  
+
+
+## Normal Index
+```{r normalIndex}
+############################
+### Normal Risk Index
+############################
+
+
+
+############################
+### Risk Assessment Function
+############################
+calculateRisk <- function(avgTemp, minTemp, maxTemp, optMin, optMax, absMin, absMax, heatVulnerability, frostVulnerability) {
+  riskLevels <- c(
+    avg = ifelse(avgTemp < optMin || avgTemp > optMax, 1, 0),
+    min = ifelse(minTemp < absMin, ifelse(frostVulnerability == "Critical", 3, 2), 0),
+    max = ifelse(maxTemp > absMax, ifelse(heatVulnerability == "Critical", 3, 2), 0)
+  )
+  
+  ## Calculate cumulative risk score for the day
+  totalRisk <- sum(riskLevels)
+  
+  ############################
+  ### Risk Category Score
+  ############################
+  if (totalRisk >= 5) {
+    return("Critical Above")
+  } else if (totalRisk >= 4 && riskLevels['max'] >= 2) {
+    return("Critical Above")
+  } else if (totalRisk >= 4 && riskLevels['min'] >= 2) {
+    return("Critical Below")
+  } else if (totalRisk >= 2) {
+    return("Severe")
+  } else if (totalRisk > 0) {
+    return("Moderate")
+  } else {
+    return("None")
+  }
+}
+
+
+## Process each crop type, station, and apply daily calculations
+results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
+  cropData <- cropInfo[cropInfo$CropTypes == crop,]
+  
+  stationResults <- lapply(unique(cropData$DailyStation), function(station) {
+    stationWeather <- weatherData[weatherData$DailyStation == station,]
+    
+    ## Filter crop data to match each station's date range exactly
+    specificCropData <- cropData[cropData$DailyStation == station, ]
+
+    ############################
+    ### Perform Risk Assessments
+    ############################
+    dailyRisks <- data.frame(
+      Station = rep(station, nrow(stationWeather)),
+      Crop = rep(crop, nrow(stationWeather)),
+      Month = stationWeather$Month,
+      Year = stationWeather$Year,
+      Risk = mapply(calculateRisk, 
+                    avgTemp = stationWeather$normalAvgTemp, 
+                    minTemp = stationWeather$normalMinTemp, 
+                    maxTemp = stationWeather$normalMaxTemp, 
+                    optMin = specificCropData$OptimalTempMin_F[1], 
+                    optMax = specificCropData$OptimalTempMax_F[1], 
+                    absMin = specificCropData$AbsTempMin_F[1], 
+                    absMax = specificCropData$AbsTempMax_F[1],
+                    heatVulnerability = specificCropData$HeatVulnerability[1], 
+                    frostVulnerability = specificCropData$FrostVulnerability[1]),
+      DaysOptimal = as.integer(stationWeather$normalAvgTemp >= specificCropData$OptimalTempMin_F[1] & stationWeather$normalAvgTemp <= specificCropData$OptimalTempMax_F[1]),
+      DaysAbsolute = as.integer(stationWeather$normalMinTemp >= specificCropData$AbsTempMin_F[1] & stationWeather$normalMaxTemp <= specificCropData$AbsTempMax_F[1])
+    )    
+    
+    
+    ############################
+    ### Risk Column Names : Group by month and year, then summarize
+    ############################
     monthlySummary <- dailyRisks %>%
       group_by(Station, Crop, Month, Year) %>%
       summarise(
@@ -154,80 +341,88 @@ results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
 
 
 
-
 ## Combine all results
-finalResults <- do.call(rbind, results)
+normalResults <- do.call(rbind, results)
 
 ## Print final results to review
-print(finalResults)
-
-
+print(normalResults)
 
 
 ## Rename 'Station' to 'DailyStation' for consistency
-finalResults <- finalResults %>%
+normalResults <- normalResults %>%
   rename(DailyStation = Station)
 
-
-
-## Oranges Check
-myOranges <- finalResults %>% 
-  filter(Crop == "Oranges")
-  
 
 ```   
 
 
+```{r calculateIndex and Plot}
+############################
+### Calculate Index and Plot
+############################
 
-```{r viz}
+calculateAndVisualizeRisk <- function(data, weatherData) {
+  ## Calculate a Net Risk Score
+  dailyResults <- data %>%
+    mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+  
+  ## !!!THESE WEIGHTS NEED FURTHER ADJUSTMENT!!!
 
-##### Visualizations #####
+  ## Get Lat/Long from DailyStation Mapping from weatherData
+  stationMetadata <- weatherData %>%
+    select(DailyStation, DailyLat, DailyLong) %>%
+    distinct()
 
-### ROUGH NETRISKSCORE ###
+  ## ::TODO:: Add County Name for Info on SHINY App
 
-## Calculate a Net Risk Score
-finalResults <- finalResults %>%
-  mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+  ## Merge Lat/Long to Index
+  dailyResults <- dailyResults %>%
+    left_join(stationMetadata, by = "DailyStation") %>%
+    mutate(
+      Year = as.numeric(Year),
+      Month = as.numeric(Month),
+      Date = as.Date(paste(Year, Month, "1", sep = "-"), format = "%Y-%m-%d")  ## Convert to Date object for use in animation or time series
+    )
 
-### These weights will need to be adjusted
+  ## Print final results to review
+  print(dailyResults)
 
-## Get Lat/Long from DailyStation Mapping from weatherData
-stationMetadata <- weatherData %>%
-  select(DailyStation, DailyLat, DailyLong) %>%
-  distinct()
+  # ## Leaflet Map Visualization
+  # map <- leaflet(data = dailyResults) %>% 
+  #   addTiles() %>%  ## Add default OpenStreetMap map tiles
+  #   addCircles(lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+  #              radius = ~NetRiskScore * 1000,  # Adjust radius based on your data scale
+  #              color = ~colorNumeric("viridis", NetRiskScore)(NetRiskScore)) %>%
+  #   addLegend("bottomright", pal = colorNumeric("viridis", dailyResults$NetRiskScore), 
+  #             values = ~NetRiskScore, title = "Net Risk Score")
+  # 
+  # ## Output the map for visualization
+  # print(map)
+  
+  ## Return final processed DataFrame (optional)
+  return(dailyResults)
+}
 
-### ::TODO:: Add County Name for Info on SHINY App
-
-
-
-## Merge Lat/Long to Index
-finalResults <- finalResults %>%
-  left_join(stationMetadata, by = "DailyStation")
-
-
-finalResults <- finalResults %>%
-  mutate(
-    Year = as.numeric(Year),
-    Month = as.numeric(Month),
-    Date = paste(Year, Month, "1", sep = "-"),  ## Create a 'Date' column for animation
-    Date = as.Date(Date, format = "%Y-%m-%d")   ## Convert to Date object
-  )
-
-
-## Leaflet Test Plot
-leaflet(data = finalResults) %>% 
-  addTiles() %>%  ## Add default OpenStreetMap map tiles
-  addCircles(lng = ~DailyLong, lat = ~DailyLat, weight = 1,
-             radius = ~NetRiskScore * 1000,  # Adjust radius based on your data scale
-             color = ~colorNumeric("viridis", NetRiskScore)(NetRiskScore)) %>%
-  addLegend("bottomright", pal = colorNumeric("viridis", finalResults$NetRiskScore), 
-            values = ~NetRiskScore, title = "Net Risk Score")
+## Calculate Results
+normalResults <- calculateAndVisualizeRisk(normalResults, weatherData)
 
 
-
-## Write Index Dataframe to CSV
-write.csv(finalResults, 'indexRoughDraft.csv', row.names = FALSE)
 ```  
+
+
+## Write to CSV
+```{r write csvs}
+#### CSV Write/Export
+
+## Write Daily Index Dataframe to CSV
+write.csv(dailyResults, 'indexRoughDraftDaily.csv', row.names = FALSE)
+
+## Write Normal Index Dataframe to CSV
+write.csv(normalResults, 'indexRoughDraftNormal.csv', row.names = FALSE)
+
+```  
+
+
 
 
 ```{r shiny}
@@ -244,8 +439,8 @@ ui <- fluidPage(
   titlePanel("Dynamic Risk Mapping by Crop Type and Date"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("selectedCrop", "Choose a Crop:", choices = unique(finalResults$Crop)),
-      sliderInput("selectedYear", "Year:", min = min(finalResults$Year), max = max(finalResults$Year), value = min(finalResults$Year)),
+      selectInput("selectedCrop", "Choose a Crop:", choices = unique(dailyResults$Crop)),
+      sliderInput("selectedYear", "Year:", min = min(dailyResults$Year), max = max(dailyResults$Year), value = min(dailyResults$Year)),
       sliderInput("selectedMonth", "Month:", min = 1, max = 12, value = 1)
     ),
     mainPanel(
@@ -257,7 +452,7 @@ ui <- fluidPage(
 server <- function(input, output) {
   output$map <- renderLeaflet({
     ## Filter data based on selected crop and date
-    filteredData <- finalResults %>%
+    filteredData <- dailyResults %>%
       filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
 
     ## Define color palette for NetRiskScore
