@@ -152,7 +152,12 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 #### Nearest Neighbor Mapping and Cardinal Temperatures
 
 
-#### GIS
+#### ArcGIS
+
+ArcGIS is an interactive geospatial mapping tool - teammate Soheil 
+TO DO :
+- Describe what soheil did (read his analysis)
+- Mention that ArcGIS is a special tool that requires a paid subscription that Soheil has. He used it to get another perspective with a unique modelling software. 
 
 ## Credits
 + *Daniel Forcade*
