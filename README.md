@@ -14,7 +14,12 @@
 >     - [Crop Raster Data Preprocessing](#crop-raster-data-preprocessing)
 > - [Usage](#usage)
 >   - [Installation](#installation)
->   - [Analysis](#analysis)
+>   - [Analysis / Model Building](#analysis-\-model-building)
+> - [ArcGIS Crop Suitability Analysis](#arcgis-crop-suitability-analysis)
+>   - [Tools Used](#tools-used)
+>   - [Methodology](#methodology)
+>   - [Data Ranking](#data-ranking)
+>   - [Weighted Overlay Analysis](#weighted-overlay-analysis)
 > - [Credits](#credits)
 
 ## Introduction
@@ -141,7 +146,7 @@ pip install -r requirements.txt
 ```
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-### Analysis
+### Analysis / Model Building
 Run the following scripts, found in the `Code/Analysis` directory, to analyse the preprocessed datasets found in the `Data/` directory:
 
 #### 30 Year Weather Normals
@@ -152,7 +157,51 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 #### Nearest Neighbor Mapping and Cardinal Temperatures
 
 
-#### GIS
+
+
+## ArcGIS Crop Suitability Analysis
+
+
+### Tools Used
+- **ArcGIS**: For this project, we utilized the Weighted Overlay spatial analysis tool within ArcGIS to analyze and combine data layers effectively.
+  - **Note**: ***ArcGIS is a licensed software suite that requires a paid subscription***. While we leveraged this tool to benefit from its robust capabilities in spatial analysis and unique modeling features, ***we do not intend for others to feel compelled to purchase this software***. We found it to be a valuable resource for gaining perspectives and insights into the data that we otherwise could not have achieved.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
+### Methodology
+
+The Suitability Analysis utilizes data from:
+- `CaliforniaCropDataFromRasters.zip` datasets, found in the `ExternalData.txt` file.
+    - **Description**: Ten years of crop production statistics across various counties. 
+- `CaliforniaCardinalData.csv`, found in the `Data/Crop_Data/` directory.
+    - **Description**: The total days that crops can be cultivated in each county.
+
+The aim is to evaluate and rank each county based on two primary criteria:
+1. **Annual Crop Production**: The total number of crops produced annually in each county.
+2. **Cultivation Days**: The total days crops can be cultivated in each county, derived from the Cardinal Crop dataset.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
+### Data Ranking
+Each county is assigned two ranks:
+- **Crop Count Rank**: Based on the annual crop production.
+- **Cultivation Days Rank**: Based on the total days that crops can be cultivated as per the Cardinal Crop dataset.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
+### Weighted Overlay Analysis
+We employed the Weighted Overlay tool in ArcMap to integrate the rankings with respective weights for a comprehensive suitability analysis:
+- **70% Weight on Crop Production**: Reflects the emphasis on the volume of crop output per county.
+- **30% Weight on Cultivation Days**: Accounts for the climatic and temporal suitability for crop cultivation.
+
+The analysis also incorporates additional factors such as proximity, land value, topology, and profitability, which are crucial for determining the overall agricultural viability of a county.
+
+<div align="center">
+  <img src="Visualizations/GIS_CropSuitability_California.png " alt="Logo" width="408" height="578">
+</div>
+<br>
+
+> *`GIS_CropSuitability_California.png` can be found in the `Visualizations/` directory*
+
+This suitability analysis is designed to highlight counties with optimal conditions for crop production based on a combination of quantitative production data and cultivation feasibility. The resulting weighted analysis aids stakeholders in making informed decisions regarding agricultural investments and operations.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 ## Credits
 + *Daniel Forcade*
