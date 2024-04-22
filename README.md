@@ -5,6 +5,8 @@
 <a name="top"></a>
 # Local Weather Impact Analysis on Crop Production
 
+
+
 > ## Table of Contents
 > - [Introduction](#introduction)
 > - [Motivation](#motivation)
@@ -19,6 +21,7 @@
 > - [Usage](#usage)
 >   - [Installation](#installation)
 >   - [Analysis / Model Building](#analysis-\-model-building)
+>   - [Crop Risk Index by Weather Station](#crop-risk-index-by-weather-station)
 > - [ArcGIS Crop Suitability Analysis](#arcgis-crop-suitability-analysis)
 >   - [Tools Used](#tools-used)
 >   - [Methodology](#methodology)
@@ -26,15 +29,21 @@
 >   - [Weighted Overlay Analysis](#weighted-overlay-analysis)
 > - [Credits](#credits)
 
+
+
 ## Introduction
 This project aims to explore the impact of micro-climate conditions on crop production. By correlating regional climate conditions with crop yields across the United States, we aim to demonstrate a proof-of-concept modeling approach that can recommend crop production adjustments based on dynamic weather patterns.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 ## Motivation
 Precision agriculture relies heavily on localized climate data to optimize crop output. Our research focuses on understanding how micro-climate affects crop yields and how data-driven insights can aid farmers in making informed decisions to enhance productivity and sustainability.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
+
 ## Data
+
 
 ### Raw Data Sources
 We utilize several datasets consisting of local weather data and crop yields, primarily sourced from:
@@ -44,6 +53,7 @@ We utilize several datasets consisting of local weather data and crop yields, pr
 - *National Climate Data Center (NCDC) [Storm Events Data](https://catalog.data.gov/dataset/ncdc-storm-events-database2)*
 - *George Mason University’s [CropScape](https://nassgeodata.gmu.edu/CropScape/)*
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 ### State and Crop Selection
 **State selections (Florida, California)**: Based on crop and weather diversity.
@@ -72,12 +82,15 @@ We utilize several datasets consisting of local weather data and crop yields, pr
 > - *Florida 2010 (No Watermelons, Peppers)*
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
+
 ## Data Preparation and Preprocessing
 
 ***(Users do not need to run these scripts, as the cleaned and preprocessed datasets are already available in the repository.)***
 
 The `Code/Prep` repository contains scripts used for data cleaning and preprocessing, which were crucial in preparing the datasets used in our analyses. These scripts are included for transparency and for those interested in understanding or replicating our preprocessing steps.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 ### Available Data
 
@@ -86,30 +99,37 @@ The preprocessed datasets used for analysis are available in the `Data/` directo
 > Links to the raw datasets used for data preparation and preprocessing can be found in the `ExternalData.txt` file.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
 ### Scripts
 
 Although it is **not necessary to run these scripts** to use the preprocessed data, here is a brief description of what each script does and their respective output file locations:
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-#### Weather Data Preparation
 
-- `normalsCountyConverter.py`
-  -  **Description**: Converts raw 30-year normals data into a county-level summary, handling missing values and standardizing units.
-     - ***Output***: `{myState}NormalsReady.csv`.
+#### Weather Data Preparation
 
 - `dailyRawCombiner.py`
   - **Description**: Combines GSOD NOAA data, which comes shipped in multiple
 files, into a single .CSV for each State selected. User must set the State and Year Ranges of the files at the top of the script.
      - ***Output***: `{state}DailyRaw.csv`
 
+- `dailyClimateShaper.py`
+  - **Description**: Processes daily climate data for a specified state, enhancing its usability for further analysis. It reads raw daily climate data, renames columns for clarity, selects essential data fields, replaces missing values with NaN, and maps weather stations to county boundaries using spatial data processing.
+     - **Output**: `{state}DailyReady.csv` , `{state}StationsReady.csv`
+
 - `dailyClimateBasicCleaner.py`
   - **Description**: Enhances the cleanliness and usability of daily climate data for a specified state. It focuses on normalizing data formats, decoding complex data fields into usable formats, and handling missing data with sophisticated data cleaning techniques.
      - ***Output***: `{myState}DailyCleaned.csv`
+
+- `normalsCountyConverter.py`
+  -  **Description**: Converts raw 30-year normals data into a county-level summary, handling missing values and standardizing units.
+     - ***Output***: `{myState}NormalsReady.csv`.
 
 - `combinedDiagnosticImpute.py`
   - **Description**: Addresses missing data within a comprehensive weather dataset and includes advanced visualization to illustrate data patterns. It is designed to clean and impute missing values across various weather parameters such as temperature, wind speed, and more.
     - ***Output***: `Imputed_Combined_Daily_Normals.csv`
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 #### Crop Raster Data Preprocessing
 
@@ -136,6 +156,8 @@ files, into a single .CSV for each State selected. User must set the State and Y
 *These scripts are well-documented and can be explored to understand the data preparation pipeline more thoroughly.*
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
+
 ## Usage
 
 ### Installation
@@ -150,17 +172,56 @@ pip install -r requirements.txt
 ```
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
 ### Analysis / Model Building
 Run the following scripts, found in the `Code/Analysis` directory, to analyse the preprocessed datasets found in the `Data/` directory:
 
+
+
 #### 30 Year Weather Normals
+
 - `EDA_Normals.Rmd`
-  - **Description**:
-    - **Output**:
+  - **Description**: This R script performs exploratory data analysis on 30-year climate normals for various counties in California and Florida. It processes data from CSV files, converts date columns, and uses `ggplot2` to visualize temperature and precipitation progressions throughout the year.
+    - **Output**: The script generates a series of plots visualizing average, maximum, and minimum temperature progressions, as well as precipitation and snowfall patterns through the year. These are visualized using different colors for various statistical measures such as average, standard deviation, and standard error. The final output includes a comprehensive PDF document containing all generated plots, titled '30 Year Normals For All of California'.
+
+
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 #### Nearest Neighbor Mapping and Cardinal Temperatures
 
+- `nearestNeighborsStationMapping.py`
+  - **Description**:
+    - **Output**:
 
+- `cropStationMapper.py`
+  - **Description**:
+    - **Output**:
+
+- `climateTotalMerge.py`
+  - **Description**:
+    - **Output**:
+
+- `MGT-6203 Final Project Spatial Analysis.ipynb`
+  - **Description**:
+    - **Output**:
+
+
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
+
+#### Crop Risk Index by Weather Station
+
+- `Index_1.Rmd`
+  - **Description**:
+    - **Output**:
+
+- `Index_V3.Rmd `
+  - **Description**:
+    - **Output**:
+
+
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 
 ## ArcGIS Crop Suitability Analysis
@@ -170,6 +231,7 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 - **ArcGIS**: For this project, we utilized the Weighted Overlay spatial analysis tool within ArcGIS to analyze and combine data layers effectively.
   - **Note**: ***ArcGIS is a licensed software suite that requires a paid subscription***. While we leveraged this tool to benefit from its robust capabilities in spatial analysis and unique modeling features, ***we do not intend for others to feel compelled to purchase this software***. We found it to be a valuable resource for gaining perspectives and insights into the data that we otherwise could not have achieved.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 ### Methodology
 
@@ -184,11 +246,13 @@ The aim is to evaluate and rank each county based on two primary criteria:
 2. **Cultivation Days**: The total days crops can be cultivated in each county, derived from the Cardinal Crop dataset.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
+
 ### Data Ranking
 Each county is assigned two ranks:
 - **Crop Count Rank**: Based on the annual crop production.
 - **Cultivation Days Rank**: Based on the total days that crops can be cultivated as per the Cardinal Crop dataset.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 ### Weighted Overlay Analysis
 We employed the Weighted Overlay tool in ArcMap to integrate the rankings with respective weights for a comprehensive suitability analysis:
