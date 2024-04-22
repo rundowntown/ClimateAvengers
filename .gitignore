@@ -67,6 +67,10 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Exclude data files and archives
+*.csv
+*.zip
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
