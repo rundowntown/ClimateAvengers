@@ -21,7 +21,9 @@
 > - [Usage](#usage)
 >   - [Installation](#installation)
 >   - [Analysis / Model Building](#analysis-\-model-building)
->   - [Crop Risk Index by Weather Station](#crop-risk-index-by-weather-station)
+>       - [30 Year Weather Normals](#30-year-weather-normals)
+>       - [Nearest Neighbor Mapping and Cardinal Temperatures](#nearest-neighbor-mapping-and-cardinal-temperatures)
+>       - [Crop Risk Index by Weather Station](#crop-risk-index-by-weather-station)
 > - [ArcGIS Crop Suitability Analysis](#arcgis-crop-suitability-analysis)
 >   - [Tools Used](#tools-used)
 >   - [Methodology](#methodology)
@@ -178,46 +180,69 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 
 
 
-#### 30 Year Weather Normals
+#### 30 Year Weather Normals Visualization
 
 - `EDA_Normals.Rmd`
-  - **Description**: This R script performs exploratory data analysis on 30-year climate normals for various counties in California and Florida. It processes data from CSV files, converts date columns, and uses `ggplot2` to visualize temperature and precipitation progressions throughout the year.
+  - **Description**: This R script performs exploratory data analysis on 30-year climate normals for various counties in California and Florida. It processes data from CSV files, converts date columns, and visualizes temperature and precipitation progressions throughout the year.
+    - **Input**: `30YearNormals_Data/CaliforniaNormalsReady.csv` , `30YearNormals_Data/FloridaNormalsReady.csv` , `Crop_Data/CaliforniaCropsCountyReady.csv`
     - **Output**: The script generates a series of plots visualizing average, maximum, and minimum temperature progressions, as well as precipitation and snowfall patterns through the year. These are visualized using different colors for various statistical measures such as average, standard deviation, and standard error. The final output includes a comprehensive PDF document containing all generated plots, titled '30 Year Normals For All of California'.
 
 
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 
-#### Nearest Neighbor Mapping and Cardinal Temperatures
+#### Recommendation Systems Developed for Effective Crop Production
 
-- `nearestNeighborsStationMapping.py`
-  - **Description**:
-    - **Output**:
+This section is dedicated to the spatial analysis and recommendation systems developed for effective crop production planning in California. The analysis is focused on assessing the production totals of various crops across different counties in California from 2010 to 2020. By using cardinal temperatures and precipitation conditions alongside a spatial analysis of decade-long weather patterns, these scripts aim to determine the most ideal counties for crop cultivation.
 
-- `cropStationMapper.py`
-  - **Description**:
-    - **Output**:
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-- `climateTotalMerge.py`
-  - **Description**:
-    - **Output**:
+##### Nearest Neighbor Mapping and Cardinal Temperatures Scripts
 
-- `MGT-6203 Final Project Spatial Analysis.ipynb`
-  - **Description**:
-    - **Output**:
+1. `nearestNeighborsStationMapping.py`
+  - **Description**: This script maps daily weather stations to their nearest normal stations based on spatial data. It reads station data, processes geographical coordinates, and uses spatial joins to map each daily weather station with its nearest normal station. The script also visualizes these connections on a map, distinguishing daily and normal stations with different markers.
+    - **Input**: `Daily_Weather_Data/{state}DailyCleaned.csv` , `30YearNormals_Data/{state}NormalsReady.csv`
+    - **Output**: `{state}_Station_Mapping.csv`, which includes the mapped daily and normal weather stations with their respective coordinates and metadata.
+
+2. `cropStationMapper.py`
+  - **Description**: This script is designed to integrate geospatial agricultural data with weather station data. It loads weather station mappings, reads agricultural data from CSV files within zip archives, converts this data to geospatial format, and performs spatial joins to associate crop data with the nearest daily weather stations. The script aggregates this data by weather station and crop type for each specified state and year.
+    - **Input**: `{state}_Station_Mapping.csv` from `nearestNeighborsStationMapping.py` , `{state}Data.zip` found in `Crop_Data/Raw_Datasets/` from `ExternalData.txt`.
+    - **Output**: CSV files for each state and year, named `{state}TopCropLonLat_{year}_GroupedByStation.csv`, containing detailed crop data integrated with geospatial weather station information.
+
+3. `climateTotalMerge.py`
+  - **Description**: This script combines daily weather data with 30-year climate normals based on station mappings. It includes data cleaning steps such as type conversion, duplicate removal, and data merging. The script also generates a composite key for unique identification and merges datasets to create a comprehensive dataset that integrates daily weather data with long-term climate normals.
+    - **Input**: `Daily_Weather_Data/{state}DailyCleaned.csv` , `30YearNormals_Data/{state}NormalsReady.csv`, `Station_Mapping/{state}_Station_Mapping.csv`
+    - **Output**: A combined CSV file named `Combined_Daily_Normals.csv`, which contains the merged daily and normals data. Additionally, it generates a map plot illustrating the connections between daily weather stations and their nearest normal stations to validate the merging process, `Plots/Nearest_Neighbor_Stations_Mapping_Plot.png`.
+
+##### Recommendation Model Script
+
+4. `MGT-6203 Final Project Spatial Analysis.ipynb`
+  - **Description**: Determines the current production totals of crops in each county of California, then recommends ideal counties for producing crops through use of cardinal temperatures/precipitation conditions and spatial analysis of 10-year and 30-year normals.
+    - **Input**: `/Main_Data/Imputed_Combined_Daily_Normals.csv` , `/Crop_Data/CaliforniaCropsCountyReady.csv` , `/Crop_Data/CaliforniaCardinalData.csv`
+
+##### Key Outputs:
+- **Production Compatibility Analysis**: A detailed analysis comparing current crop production with optimal conditions to suggest potential improvements.
+- **Data Visualizations**: Includes maps and charts that illustrate the relationships between daily weather stations and their nearest normal stations, providing visual insights into the spatial distribution of weather impacts on agriculture.
+- **Recommendations for Crop Production**: Final recommendations for crop production adjustments per county to align better with the cardinal temperatures and historical climate data.
+
+##### Next Steps
+The section concludes with insights into the discrepancies between current and recommended crop production practices. Suggestions for further research include increasing data fidelity, incorporating soil composition, and annual pest invasion cycles to enhance agricultural outcomes.
 
 
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
+
 
 
 #### Crop Risk Index by Weather Station
 
 - `Index_1.Rmd`
   - **Description**:
+    - **Inpput**:
     - **Output**:
 
 - `Index_V3.Rmd `
   - **Description**:
+    - **Inpput**:
     - **Output**:
 
 
