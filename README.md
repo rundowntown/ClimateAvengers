@@ -164,7 +164,7 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 
 ### Tools Used
 - **ArcGIS**: For this project, we utilized the Weighted Overlay spatial analysis tool within ArcGIS to analyze and combine data layers effectively.
-  - **Note**: ArcGIS, which includes ArcMap, ***is a licensed software suite that requires a paid subscription***. While we leveraged this tool to benefit from its robust capabilities in spatial analysis and unique modeling features, ***we do not intend for others to feel compelled to purchase this software***. We found it to be a valuable resource for gaining perspectives and insights into the data that we otherwise could not have achieved.
+  - **Note**: ***ArcGIS is a licensed software suite that requires a paid subscription***. While we leveraged this tool to benefit from its robust capabilities in spatial analysis and unique modeling features, ***we do not intend for others to feel compelled to purchase this software***. We found it to be a valuable resource for gaining perspectives and insights into the data that we otherwise could not have achieved.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 ### Methodology
