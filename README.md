@@ -172,7 +172,7 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 The Suitability Analysis utilizes data from:
 - `CaliforniaCropDataFromRasters.zip` datasets, found in the `ExternalData.txt` file.
     - **Description**: Ten years of crop production statistics across various counties. 
-- `CaliforniaCardinalData.csv`, found in the `/Data/Crop_Data/` directory.
+- `CaliforniaCardinalData.csv`, found in the `Data/Crop_Data/` directory.
     - **Description**: The total days that crops can be cultivated in each county.
 
 The aim is to evaluate and rank each county based on two primary criteria:
