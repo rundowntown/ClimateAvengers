@@ -196,8 +196,11 @@ The analysis also incorporates additional factors such as proximity, land value,
 <div align="center">
   <img src="Visualizations/GIS_CropSuitability_California.png " alt="Logo" width="408" height="578">
 </div>
+<br>
 
->This suitability analysis is designed to highlight counties with optimal conditions for crop production based on a combination of quantitative production data and cultivation feasibility. The resulting weighted analysis aids stakeholders in making informed decisions regarding agricultural investments and operations.
+> *`GIS_CropSuitability_California.png` can be found in the `Visualizations/` directory*
+
+This suitability analysis is designed to highlight counties with optimal conditions for crop production based on a combination of quantitative production data and cultivation feasibility. The resulting weighted analysis aids stakeholders in making informed decisions regarding agricultural investments and operations.
 <div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 ## Credits
