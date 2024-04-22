@@ -50,7 +50,6 @@ cropInfo <- cropCardinalData %>%
   select(-c(OptimalTempMin_C, OptimalTempMax_C, AbsTempMin_C, AbsTempMax_C)) # Remove Celsius columns
 
 
-
 ```  
 
 
@@ -175,7 +174,7 @@ write_csv(finalResults, "../Data/Statistical_Threshold_Output.csv")
 ### Statistical Threshold: Binary Visualizations
 ############################
 
-# Define the variables you want to plot
+## Define the variables to plot
 variables_to_plot <- c("DaysAvgTempOptimal", "DaysAvgTempAbs", "DaysAvgTempAboveOptMax", "DaysAvgTempBelowOptMin",
                        "DaysAvgTempAboveAbsMax", "DaysAvgTempBelowAbsMin", "DaysMinTempOptimal", "DaysMinTempAbs",
                        "DaysMinTempAboveOptMax", "DaysMinTempBelowOptMin", "DaysMaxTempOptimal", "DaysMaxTempAbs",
@@ -426,58 +425,27 @@ myOranges <- finalResults %>%
 
 ```{r indexVis}
 
-## Check the data types and look at the content of DailyLat and DailyLong
-str(finalResults$DailyLat)
-str(finalResults$DailyLong)
 
 ## If they are not numeric, convert them
 finalResults$DailyLat <- as.numeric(as.character(finalResults$DailyLat))
 finalResults$DailyLong <- as.numeric(as.character(finalResults$DailyLong))
 
-## Handle potential NA values that arise from conversion errors
-finalResults <- finalResults %>%
-  filter(!is.na(DailyLat) & !is.na(DailyLong))
 
 ## Convert Year and Month to numeric if they are not already
 finalResults$Year <- as.numeric(as.character(finalResults$Year))
 finalResults$Month <- as.numeric(as.character(finalResults$Month))
 
-
-## Scaling ########
-finalResults$NormalizedRiskIndex <- scales::rescale(finalResults$TotalRiskIndex, to = c(0, 100))
-
-finalResults$LogRiskIndex <- log1p(finalResults$TotalRiskIndex)  # log1p ensures log(1 + x) to handle zero values smoothly
-
-finalResults$QuantileRiskIndex <- ecdf(finalResults$TotalRiskIndex)(finalResults$TotalRiskIndex) * 100  # Converts to percentile ranking
-
-
-
-## Create a color palette that adjusts based on data
-getRiskColor <- function(risk) {
-  cut(risk,
-      breaks = quantile(risk, probs = seq(0, 1, by = 0.25), na.rm = TRUE),
-      labels = c("green", "yellow", "orange", "red"),
-      include.lowest = TRUE)
-}
-finalResults$RiskColor <- getRiskColor(finalResults$TotalRiskIndex)
-############
-
 ui <- fluidPage(
-  theme = shinytheme("flatly"),
-  titlePanel("Crop Risk Visualization"),
+  theme = shinytheme("flatly"),  # Using shinythemes for better aesthetics
+  titlePanel("Dynamic Risk Mapping by Crop Type and Date"),
   sidebarLayout(
     sidebarPanel(
       selectInput("selectedCrop", "Choose a Crop:", choices = unique(finalResults$Crop)),
-      sliderInput("selectedYear", "Year:", 
-                  min = min(finalResults$Year, na.rm = TRUE), 
-                  max = max(finalResults$Year, na.rm = TRUE), 
-                  value = range(finalResults$Year, na.rm = TRUE)),
-      sliderInput("selectedMonth", "Month:", 
-                  min = 1, max = 12, value = 1),
-      selectInput("scalingMethod", "Select Scaling Method:", 
-                  choices = c("Linear", "Logarithmic", "Quantile")),
+      sliderInput("selectedYear", "Year:", min = min(finalResults$Year), max = max(finalResults$Year), value = min(finalResults$Year)),
+      sliderInput("selectedMonth", "Month:", min = 1, max = 12, value = 1),
       tags$hr(),
-      tags$p("Adjust the filters to change the maps dynamically. The risk levels are visualized by color intensity, with more severe risks shown in darker shades.")
+      tags$p("Adjust the filters to change the maps dynamically. The risk levels are visualized by color intensity, with more severe risks shown in more intense colors."),
+      tags$p("Maps provide a visual representation of daily and historical normal risk indices for selected crops, highlighting areas of critical concern.")
     ),
     mainPanel(
       h4("Risk Index Map"),
@@ -487,50 +455,40 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-  # Reactive expression to handle scaling based on selected method
-  scaledRiskIndex <- reactive({
-    data <- finalResults
-    if (input$scalingMethod == "Linear") {
-      data$ScaledRiskIndex <- scales::rescale(data$TotalRiskIndex, to = c(0, 100))
-    } else if (input$scalingMethod == "Logarithmic") {
-      data$ScaledRiskIndex <- log1p(data$TotalRiskIndex)
-    } else if (input$scalingMethod == "Quantile") {
-      data$ScaledRiskIndex <- ecdf(data$TotalRiskIndex)(data$TotalRiskIndex) * 100
-    }
+  # Reactive expression for filtered data based on user input
+  filteredData <- reactive({
+    data <- finalResults %>%
+      filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
+    min_index <- min(data$TotalRiskIndex, na.rm = TRUE)
+    max_index <- max(data$TotalRiskIndex, na.rm = TRUE)
+    data$ScaledRiskIndex <- rescale(data$TotalRiskIndex, to = c(0, 100), from = c(min_index, max_index))
     data
   })
   
+  # Common color scale for risk visualization, green to red
+  colorPalette <- reactive({
+    colorNumeric(palette = c("green", "red"), domain = c(0, 100))  # Green to red color gradient
+  })
+  
+  # Render the Leaflet map
   output$riskMap <- renderLeaflet({
-    # Filter data based on user input
-    filteredData <- scaledRiskIndex() %>%
-      filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
-
-    # Create a color palette based on scaled risk index
-    colorPalette <- colorNumeric(palette = c("green", "yellow", "orange", "red"), domain = filteredData$ScaledRiskIndex)
-
-    leaflet(filteredData) %>%
+    data <- filteredData()
+    leaflet(data) %>%
       addTiles() %>%
-      addCircleMarkers(
+      addCircles(
         lng = ~DailyLong, lat = ~DailyLat,
-        color = ~colorPalette(ScaledRiskIndex),
-        popup = ~paste("County: ", DailyCounty,
-                       "<br>Total Deviation Cold Optimal: ", TotalDeviationColdOpt,
-                       "<br>Total Deviation Cold Absolute: ", TotalDeviationColdAbs,
-                       "<br>Total Deviation Heat Optimal: ", TotalDeviationHeatOpt,
-                       "<br>Total Deviation Heat Absolute: ", TotalDeviationHeatAbs),
+        weight = 1,
+        radius = ~50 * log1p(ScaledRiskIndex) * 350,  # Logarithmic scaling for radius
+        color = ~colorPalette()(ScaledRiskIndex),
         opacity = 1, fillOpacity = 0.8,
-        radius = ~ifelse(ScaledRiskIndex < 25, 5, ifelse(ScaledRiskIndex < 50, 10, 15))
+        popup = ~paste("<strong>", Crop, "</strong><br/>",
+                       "Risk Index: ", round(ScaledRiskIndex, 2),
+                       "<br/>County: ", DailyCounty)
       ) %>%
-      addLegend("bottomright", pal = colorPalette, values = ~ScaledRiskIndex, title = "Risk Index", opacity = 0.5)
+      addLegend("bottomright", pal = colorPalette(), values = ~ScaledRiskIndex, title = "Risk Index", opacity = 1)
   })
 }
 
-# Run the app
-shinyApp(ui = ui, server = server)
-```   
+shinyApp(ui, server)
 
-
-
-
-
-
+```  
