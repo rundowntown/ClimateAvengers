@@ -14,7 +14,12 @@
 >     - [Crop Raster Data Preprocessing](#crop-raster-data-preprocessing)
 > - [Usage](#usage)
 >   - [Installation](#installation)
->   - [Analysis](#analysis)
+>   - [Analysis / Model Building](#analysis-\-model-building)
+> - [ArcGIS Crop Suitability Analysis](#arcgis-crop-suitability-analysis)
+>   - [Tools Used](#tools-used)
+>   - [Methodology](#methodology)
+>   - [Data Ranking](#data-ranking)
+>   - [Weighted Overlay Analysis](#weighted-overlay-analysis)
 > - [Credits](#credits)
 
 ## Introduction
@@ -154,16 +159,15 @@ Run the following scripts, found in the `Code/Analysis` directory, to analyse th
 
 
 
-## ArcGIS Suitability Analysis for California Crop Production
+## ArcGIS Crop Suitability Analysis
 
 
 ### Tools Used
 - **ArcMap**: For this project, we utilized the Weighted Overlay spatial analysis tool within ArcMap to analyze and combine data layers effectively.
   - **Note**: ArcGIS, which includes ArcMap, is a licensed software suite that requires a paid subscription. We leveraged this tool to benefit from its robust capabilities in spatial analysis and unique modeling features.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 ### Methodology
-
-#### Data
 
 The Suitability Analysis utilizes data from:
 - `CaliforniaCropDataFromRasters.zip` datasets, found in the `ExternalData.txt` file.
@@ -174,22 +178,27 @@ The Suitability Analysis utilizes data from:
 The aim is to evaluate and rank each county based on two primary criteria:
 1. **Annual Crop Production**: The total number of crops produced annually in each county.
 2. **Cultivation Days**: The total days crops can be cultivated in each county, derived from the Cardinal Crop dataset.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-#### Data Ranking
+### Data Ranking
 Each county is assigned two ranks:
 - **Crop Count Rank**: Based on the annual crop production.
 - **Cultivation Days Rank**: Based on the total days that crops can be cultivated as per the Cardinal Crop dataset.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-#### Weighted Overlay Analysis
+### Weighted Overlay Analysis
 We employed the Weighted Overlay tool in ArcMap to integrate the rankings with respective weights for a comprehensive suitability analysis:
 - **70% Weight on Crop Production**: Reflects the emphasis on the volume of crop output per county.
 - **30% Weight on Cultivation Days**: Accounts for the climatic and temporal suitability for crop cultivation.
 
 The analysis also incorporates additional factors such as proximity, land value, topology, and profitability, which are crucial for determining the overall agricultural viability of a county.
 
-This suitability analysis is designed to highlight counties with optimal conditions for crop production based on a combination of quantitative production data and cultivation feasibility. The resulting weighted analysis aids stakeholders in making informed decisions regarding agricultural investments and operations.
+<div align="center">
+  <img src="Visualizations/GIS_CropSuitability_California.png " alt="Logo" width="408" height="578">
+</div>
 
-
+>This suitability analysis is designed to highlight counties with optimal conditions for crop production based on a combination of quantitative production data and cultivation feasibility. The resulting weighted analysis aids stakeholders in making informed decisions regarding agricultural investments and operations.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 ## Credits
 + *Daniel Forcade*
