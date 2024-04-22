@@ -21,8 +21,14 @@
 >  - [Installation](#installation)
 >  - [Analysis / Model Building](#analysis-\-model-building)
 >      - [30 Year Weather Normals Visualization](#30-year-weather-normals-visualization)
->      - [Nearest Neighbor Mapping and Cardinal Temperatures Scripts](#nearest-neighbor-mapping-and-cardinal-temperatures-scripts)
+>      - [Recommendation Systems Developed for Effective Crop Production](#recommendation-systems-developed-for-effective-crop-production)
+>           - [Nearest Neighbor Mapping and Cardinal Temperatures Scripts](#nearest-neighbor-mapping-and-cardinal-temperatures-scripts)
+>           - [Recommendation Model Script](#recommendation-model-script)
+>           - [Spatial Analysis Key Outputs](#spatial-analysis-key-outputs)
+>           - [Next Steps](#next-steps)
 >      - [Crop Risk Index by Weather Station](#crop-risk-index-by-weather-station)
+>           - [Crop Risk Index Script](#crop-risk-index-script)
+>           - [Risk Index Key Outputs](#risk-index-key-outputs)
 > - [ArcGIS Crop Suitability Analysis](#arcgis-crop-suitability-analysis)
 >   - [Tools Used](#tools-used)
 >   - [Methodology](#methodology)
@@ -210,17 +216,20 @@ These scripts are dedicated to developing a recommendation system for effective 
     - **Description**: This script combines daily weather data with 30-year climate normals based on station mappings. It includes data cleaning steps such as type conversion, duplicate removal, and data merging. The script also generates a composite key for unique identification and merges datasets to create a comprehensive dataset that integrates daily weather data with long-term climate normals.
         - **Input**: `Daily_Weather_Data/{state}DailyCleaned.csv` , `30YearNormals_Data/{state}NormalsReady.csv`, `Station_Mapping/{state}_Station_Mapping.csv`
         - **Output**: A combined CSV file named `Combined_Daily_Normals.csv`, which contains the merged daily and normals data. Additionally, it generates a map plot illustrating the connections between daily weather stations and their nearest normal stations to validate the merging process, `Plots/Nearest_Neighbor_Stations_Mapping_Plot.png`.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 #### Recommendation Model Script
 
 4. `MGT-6203 Final Project Spatial Analysis.ipynb`
     - **Description**: Determines the current production totals of crops in each county of California, then recommends ideal counties for producing crops through use of cardinal temperatures/precipitation conditions and spatial analysis of 10-year and 30-year normals.
         - **Input**: `/Main_Data/Imputed_Combined_Daily_Normals.csv` , `/Crop_Data/CaliforniaCropsCountyReady.csv` , `/Crop_Data/CaliforniaCardinalData.csv`
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
-#### Key Outputs:
+#### Spatial Analysis Key Outputs
 - **Production Compatibility Analysis**: A detailed analysis comparing current crop production with optimal conditions to suggest potential improvements.
 - **Data Visualizations**: Includes maps and charts that illustrate the relationships between daily weather stations and their nearest normal stations, providing visual insights into the spatial distribution of weather impacts on agriculture.
 - **Recommendations for Crop Production**: Final recommendations for crop production adjustments per county to align better with the cardinal temperatures and historical climate data.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 #### Next Steps
 The section concludes with insights into the discrepancies between current and recommended crop production practices. Suggestions for further research include increasing data fidelity, incorporating soil composition, and annual pest invasion cycles to enhance agricultural outcomes.
@@ -239,10 +248,11 @@ These scripts are dedicated to constructing a Weather Risk Index for crops based
   - **Description**:  A comprehensive index that integrates advanced statistical thresholds and risk assessments for agricultural crops based on weather data. It calculates deviation thresholds for temperature and other weather-related variables to determine risk levels, and incorporates detailed visualizations and a dynamic risk index assessment that considers both temperature extremities and cumulative risk factors.
     - **Input**: `Main_Data/Imputed_Combined_Daily_Normals.csv` , `Crop_Data/CaliforniaCropsStationReady.csv` , `Data/Crop_Data/CaliforniaCardinalData.csv`
 
-#### Key Outputs
+#### Risk Index Key Outputs
 - **Risk Factors**: Generates detailed CSV reports outlining daily and accumulated risk factors for each crop and weather station.
 - **Interactive Maps**: Provides dynamic maps that display risk levels across different regions, allowing stakeholders to visually assess areas of concern and plan interventions accordingly.
 - **Dashboard**: A Shiny dashboard presents a user-friendly interface for exploring the risk data, with tools to select specific crops, regions, and time frames.
+<div align="right" style="text-align: right;"><a href="#top">Back to Top</a></div>
 
 
 > ***`Index_1.Rmd` is not essential for building the Risk Index model.*** Rather, we include it here as a proof-of-concept script that many hours went into refining.
