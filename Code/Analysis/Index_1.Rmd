@@ -17,6 +17,7 @@ library(viridis)
 library(ggmap)
 library(leaflet)
 library(shiny)
+library(shinythemes)
 ```
 
 ## Weather Risk Index
@@ -56,7 +57,7 @@ cropInfo <- cropCardinalData %>%
   inner_join(cropCountData, by = "CropTypes") %>%
   select(-c(OptimalTempMin_C, OptimalTempMax_C, AbsTempMin_C, AbsTempMax_C)) # Remove Celsius columns
 
- 
+
 ```   
 
 
@@ -166,18 +167,14 @@ results <- pblapply(unique(cropInfo$CropTypes), function(crop) {
 dailyResults <- do.call(rbind, results)
 
 
-
 ## Print final results to review
 print(dailyResults)
-
 
 
 
 ## Rename 'Station' to 'DailyStation' for consistency
 dailyResults <- dailyResults %>%
   rename(DailyStation = Station)
-
-
 
 
 
@@ -203,7 +200,8 @@ myOranges <- dailyResults %>%
 
 ## Calculate a Net Risk Score
 dailyResults <- dailyResults %>%
-  mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+  mutate(NetRiskScore = 
+           (DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25)) / TotalDays)
 
 ### These weights will need to be adjusted
 
@@ -362,9 +360,11 @@ normalResults <- normalResults %>%
 ############################
 
 calculateAndVisualizeRisk <- function(data, weatherData) {
+
   ## Calculate a Net Risk Score
   dailyResults <- data %>%
-    mutate(NetRiskScore = DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25))
+    mutate(NetRiskScore = 
+           (DaysOptimal - (CriticalAbove + CriticalBelow + Severe * 0.5 + Moderate * 0.25)) / TotalDays)
   
   ## !!!THESE WEIGHTS NEED FURTHER ADJUSTMENT!!!
 
@@ -436,47 +436,78 @@ write.csv(normalResults, 'indexRoughDraftNormal.csv', row.names = FALSE)
 
 ## Define UI for the application
 ui <- fluidPage(
+  theme = shinytheme("flatly"),  # Using shinythemes for better aesthetics
   titlePanel("Dynamic Risk Mapping by Crop Type and Date"),
   sidebarLayout(
     sidebarPanel(
       selectInput("selectedCrop", "Choose a Crop:", choices = unique(dailyResults$Crop)),
       sliderInput("selectedYear", "Year:", min = min(dailyResults$Year), max = max(dailyResults$Year), value = min(dailyResults$Year)),
-      sliderInput("selectedMonth", "Month:", min = 1, max = 12, value = 1)
+      sliderInput("selectedMonth", "Month:", min = 1, max = 12, value = 1),
+      tags$hr(),
+      tags$p("Adjust the filters to change the maps dynamically. The risk levels are visualized by color intensity, with more severe risks shown in more intense colors."),
+      tags$p("Maps provide a visual representation of daily and historical normal risk indices for selected crops, highlighting areas of critical concern.")
     ),
     mainPanel(
-      leafletOutput("map")
+      h4("Daily Risk Index Map"),
+      leafletOutput("dailyMap"),
+      h4("Normal Risk Index Map"),
+      leafletOutput("normalMap")
     )
   )
 )
 
 server <- function(input, output) {
-  output$map <- renderLeaflet({
-    ## Filter data based on selected crop and date
-    filteredData <- dailyResults %>%
-      filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
+  # Compute common color scale domain
+  observe({
+    combinedData <- bind_rows(
+      dailyResults %>% filter(Crop == input$selectedCrop),
+      normalResults %>% filter(Crop == input$selectedCrop)
+    )
+    update <- reactive({ range(combinedData$NetRiskScore, na.rm = TRUE) })
+    colorPalette <- colorNumeric(palette = c("red", "green"), domain = update())
+    
+    output$dailyMap <- renderLeaflet({
+      filteredDaily <- dailyResults %>%
+        filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
+    
+      leaflet(data = filteredDaily) %>%
+        addProviderTiles(providers$CartoDB.Positron) %>%
+        addCircles(
+          lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+          radius = ~ifelse(NetRiskScore < 0, -NetRiskScore * 1500, NetRiskScore * 1000),
+          color = ~colorPalette(NetRiskScore),
+          opacity = 1, fillOpacity = 0.8,
+          popup = ~paste("<strong>", Crop, "</strong><br/>",
+                         "Risk Score: ", NetRiskScore,
+                         "<br/>Station: ", DailyStation)
+        ) %>%
+        addLegend("bottomright", pal = colorPalette, values = ~NetRiskScore, title = "Net Risk Score")
+    })    
+    
+    
 
-    ## Define color palette for NetRiskScore
-    colorPalette <- colorNumeric(palette = c("red", "green"), domain = filteredData$NetRiskScore)
+    output$normalMap <- renderLeaflet({
+      filteredNormal <- normalResults %>%
+        filter(Crop == input$selectedCrop, Year == input$selectedYear, Month == input$selectedMonth)
 
-    ## Create the map
-    leaflet(data = filteredData) %>%
-      addTiles() %>%
-      addCircles(
-        lng = ~DailyLong, lat = ~DailyLat, weight = 1,
-        radius = ~ifelse(NetRiskScore < 0, -NetRiskScore * 1500, NetRiskScore * 1000),
-        color = ~colorPalette(NetRiskScore),
-        opacity = 1, fillOpacity = 0.8,
-        popup = ~paste(Crop, "Risk Score:", NetRiskScore)
-      ) %>%
-      addLegend("bottomright", pal = colorPalette, values = ~NetRiskScore,
-                title = "Net Risk Score",
-                opacity = 1)
+      leaflet(data = filteredNormal) %>%
+        addProviderTiles(providers$CartoDB.Positron) %>%
+        addCircles(
+          lng = ~DailyLong, lat = ~DailyLat, weight = 1,
+          radius = ~ifelse(NetRiskScore < 0, -NetRiskScore * 1500, NetRiskScore * 1000),
+          color = ~colorPalette(NetRiskScore),
+          opacity = 1, fillOpacity = 0.8,
+          popup = ~paste("<strong>", Crop, "</strong><br/>",
+                         "Risk Score: ", NetRiskScore,
+                         "<br/>Station: ", DailyStation)
+        ) %>%
+        addLegend("bottomright", pal = colorPalette, values = ~NetRiskScore, title = "Net Risk Score")
+    })
   })
 }
 
 ## Run the application
 shinyApp(ui = ui, server = server)
-
 
 
 

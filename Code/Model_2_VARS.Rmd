@@ -1,0 +1,48 @@
+---
+title: "Model_2_VAR"
+author: "DCF"
+date: "2024-04-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(forecast)
+library(lubridate)
+library(vars)
+library(randomForest)
+
+```
+
+
+```{r dataLoad}
+getwd()
+
+## Weather Data
+weatherData <- read_csv('../Data/Main_Data/Imputed_Combined_Daily_Normals.csv')
+
+## Crop Count Data
+cropCountData <- read_csv('../Data/Crop_Data/CaliforniaCropsStationReady.csv')
+
+## Crop Cardinal Data
+cropCardinalData <- read_csv('../Data/Crop_Data/CaliforniaCardinalData.csv')
+
+colnames(weatherData)
+colnames(cropCountData)
+colnames(cropCardinalData)
+
+## Join Crop Data and Cardinal Data
+cropInfo <- cropCardinalData %>% 
+  inner_join(cropCountData, by = "CropTypes")
+
+
+## Join Weather Data and Crop Data
+fullData <- cropInfo %>% 
+  inner_join(weatherData, by = "DailyStation")
+
+
+
+```
+
