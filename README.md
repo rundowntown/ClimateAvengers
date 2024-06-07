@@ -1,11 +1,14 @@
+
+
 <img src="https://brand.gatech.edu/sites/default/files/inline-images/extended-RGB.png" 
     width="700" 
     height="200" />
 
 <a name="top"></a>
+
 # Local Weather Impact Analysis on Crop Production
 
-
+![Logo](Misc_Image_Assets/GPT_Logo_1.jpg)
 
 > ## Table of Contents
 > - [Introduction](#introduction)
