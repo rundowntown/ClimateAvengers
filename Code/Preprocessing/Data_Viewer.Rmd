@@ -1,0 +1,23 @@
+---
+title: "Data_View"
+author: "DCF"
+date: "2024-06-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+```
+
+## R Markdown
+
+```{r dataLoad}
+## Weather Data
+weatherData <- read_csv('../Data/Main_Data/Imputed_Combined_Daily_Normals.csv')
+
+
+
+
+```
