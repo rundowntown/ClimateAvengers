@@ -15,9 +15,14 @@ library(tidyverse)
 
 ```{r dataLoad}
 ## Weather Data
-weatherData <- read_csv('../Data/Main_Data/Imputed_Combined_Daily_Normals.csv')
+weatherData <- read_csv('../../Data/Main_Data/Imputed_Combined_Daily_Normals.csv')
 
 
+## 2010 - 2020
+
+
+## Crop Report Data
+cropReport2010 <- read_csv('../../Data/Crop_Production_Data/Crop_Report_2010.csv')
 
 
 ```

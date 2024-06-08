@@ -68,7 +68,7 @@ share/python-wheels/
 MANIFEST
 
 # Exclude data files and archives
-*.csv
+## Removed '*.csv' on 6/8/24 to add additional data to repo
 *.zip
 
 # PyInstaller
