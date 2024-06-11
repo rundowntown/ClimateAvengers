@@ -54,16 +54,21 @@ def standardize_columns(df):
     df.columns = df.columns.str.replace('Value \(Dollars\)', 'Value', regex=True)
 
     ## Convert data types
-    numeric_cols = ['Year', 'Commodity Code', 'County Code', 'Harvested Acres', 'Yield', 'Production', 'Price P/U', 'Value']
+    numeric_cols = ['Year', 'Commodity Code', 'County Code', 
+                    'Harvested Acres', 'Yield', 'Production', 
+                    'Price P/U', 'Value']
+    
     for col in numeric_cols:
         if col in df.columns:  ## Check if the column exists in the DataFrame
-            df[col] = pd.to_numeric(df[col], errors='coerce')  ## Convert to numeric, make non-convertible values NaN
+            ## Convert to numeric, make non-convertible values NaN
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
     ## Handle character columns
     char_cols = ['Crop Name', 'County', 'Unit']
     for col in char_cols:
         if col in df.columns:
-            df[col] = df[col].astype(str)  # Ensure these are treated as string data
+            ## Ensure these are treated as string data
+            df[col] = df[col].astype(str)  
     
     return df
 
@@ -75,7 +80,8 @@ for year in range(2010, 2021):
     if os.path.exists(file_path):
         yearly_data = pd.read_csv(file_path)
         yearly_data = standardize_columns(yearly_data)
-        print(f"Column names for {year}: {list(yearly_data.columns)}")  # Add this line to check columns
+        ## Check Column Names are Consistent
+        print(f"Column names for {year}: {list(yearly_data.columns)}")
         aggregated_data = pd.concat([aggregated_data, yearly_data], ignore_index=True)
     else:
         print(f"File not found: {file_path}")
@@ -85,5 +91,6 @@ for year in range(2010, 2021):
 # =============================================================================
 aggregated_data.to_csv(output_file, index=False)
 print(f"Aggregated data saved to {output_file}")
+
 
 
