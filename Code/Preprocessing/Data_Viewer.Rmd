@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(tidyverse)
 library(ggplot2)
+library(stringr)
 ```
 
 ## R Markdown
@@ -146,16 +147,22 @@ cat("\nTotal number of counties unique to weather data:", length(unique_to_weath
 ```{r graphEDA}
 
 ## Currently Cycling Through y = to view trends for Production, Yield, Value
+noTotalsReport <- filteredReport %>%
+  filter(County != "Sum of Others", 
+         County != "State Total",
+         str_detect(Crop_Name, "ORANGES")) 
 
 ## Plotting
-p <- ggplot(filteredReport, aes(x = Year, y = Production, color = County)) + 
+p <- ggplot(noTotalsReport, aes(x = Year, y = Production, color = County)) + 
   geom_line() + 
   facet_wrap(~Crop_Name, scales = "free_y") +  ## Facet by Crop_Name, allowing each plot to have its own y scale
   labs(title = "Annual Crop Production by County",
        x = "Year",
-       y = "Yield") +
+       y = "Value") +
   theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  ## Rotate x-axis labels for better visibility
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        #,
+       # legend.position = "none")  # Hides the legend
 
 ## Print the plot
 print(p)

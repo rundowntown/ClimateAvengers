@@ -93,11 +93,17 @@ for year in range(2010, 2021):
         
         
 # =============================================================================
-## Fix misspellings in the County column
+## County Names Cleaning
 # =============================================================================
-## Use regex to catch variations of "San Luis Obisp" to "San Luis Obispo
+
+## Change "San Luis Obisp" to "San Luis Obispo
 aggregated_data['County'] = aggregated_data['County'].replace(to_replace=r'^San Luis Obis[p|bo]?.*$',
                                                               value='San Luis Obispo', regex=True)
+
+## Change 'State Totals' to 'State Total'
+aggregated_data['County'] = aggregated_data['County'].str.strip().replace(to_replace=r'^State Totals$', 
+                                                                         value='State Total', regex=True)
+
 
 # =============================================================================
 ## Save the Aggregated Data to a CSV File
